@@ -6,9 +6,9 @@ const createError = require("../utils/createError"); // optional helper
 // REGISTER USER
 exports.registerUser = async (req, res, next) => {
   try {
-    const { email, password,} = req.body;
+    const { email, password } = req.body;
 
-    // basic validations
+    // Basic validations
     if (!email || !email.includes("@")) {
       throw createError("Invalid email address", 400, "INVALID_EMAIL");
     }
@@ -21,20 +21,25 @@ exports.registerUser = async (req, res, next) => {
       );
     }
 
-    // check for duplicates
+    // Check for duplicates
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       throw createError("Email already in use", 409, "EMAIL_EXISTS");
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new user
     const newUser = new User({
       email,
       password: hashedPassword,
     });
 
     const savedUser = await newUser.save();
+
+    // Generate JWT using your auth.js utility
+    const accessToken = auth.createAccessToken(savedUser);
 
     res.status(201).json({
       message: "Registered successfully",

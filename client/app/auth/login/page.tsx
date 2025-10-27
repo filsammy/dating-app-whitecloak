@@ -16,7 +16,7 @@ export default function LoginPage() {
   // redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/discover");
+      router.replace("/profile");
     }
   }, [user, authLoading, router]);
 

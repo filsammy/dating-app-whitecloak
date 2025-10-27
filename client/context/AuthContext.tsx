@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface UserType {
   _id: string;
@@ -10,7 +11,7 @@ interface UserType {
 interface AuthContextType {
   user: UserType | null;
   loading: boolean;
-  login: (token: string) => Promise<void>;
+  login: (token: string, redirectTo?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
   const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,15 +46,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const login = async (token?: string) => {
+  // ✅ login now accepts an optional redirect path
+  const login = async (token?: string, redirectTo: string = "/discover") => {
     if (!token) return;
     localStorage.setItem("accessToken", token);
     await fetchProfile(token);
+    router.replace(redirectTo);
   };
 
   const logout = () => {
     localStorage.removeItem("accessToken");
     setUser(null);
+    router.replace("/login"); // optional logout redirect
   };
 
   useEffect(() => {

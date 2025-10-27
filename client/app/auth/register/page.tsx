@@ -33,8 +33,8 @@ export default function RegisterPage() {
       }
 
       // Immediately log the user in after registration
-      await login(data.user?.access || data.access); // if backend also returns access token
-      router.replace("/discover"); // redirect after successful registration
+      await login(data.access, "/profile"); // if backend also returns access token
+      router.replace("/profile"); // redirect after successful registration
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");

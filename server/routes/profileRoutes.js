@@ -1,22 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const matchController = require("../controllers/matchController");
+const profileController = require("../controllers/profileController");
 const auth = require("../auth");
 const { verify } = auth;
 
-// GET POTENTIAL MATCHES (DISCOVERY)
-router.get("/discover", verify, matchController.getPotentialMatches);
+// CREATE OR UPDATE PROFILE
+router.post("/", verify, profileController.createOrUpdateProfile);
 
-// SWIPE (LIKE OR SKIP)
-router.post("/swipe", verify, matchController.swipe);
+// GET OWN PROFILE
+router.get("/me", verify, profileController.getMyProfile);
 
-// GET ALL MY MATCHES
-router.get("/", verify, matchController.getMyMatches);
+// GET PROFILE BY ID
+router.get("/:profileId", verify, profileController.getProfileById);
 
-// CHECK IF MATCHED WITH SPECIFIC USER
-router.get("/check/:otherUserId", verify, matchController.checkMatch);
-
-// UNMATCH
-router.delete("/:matchedUserId", verify, matchController.unmatch);
+// DELETE PROFILE
+router.delete("/", verify, profileController.deleteProfile);
 
 module.exports = router;

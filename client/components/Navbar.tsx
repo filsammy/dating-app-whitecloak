@@ -11,10 +11,10 @@ export default function Header() {
           <Link href="/discover">Match</Link>
         </li>
         <li>
-          <Link href="/discover">Message</Link>
+          <Link href="/chat">Message</Link>
         </li>
         <li>
-          <Link href="/discover">Profile</Link>
+          <Link href="/profile">Profile</Link>
         </li>
         <li>
           <Link href="/auth/login">Login</Link>
