@@ -116,48 +116,53 @@ export default function ChatWindow({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <MessageCircle className="size-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                No messages yet. Say hi! 👋
-              </p>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Scrollable messages area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <MessageCircle className="size-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No messages yet. Say hi! 👋
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          messages.map((msg) => {
-            const isMe = msg.senderId._id === currentUserId;
-            return (
-              <div
-                key={msg._id}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-              >
+          ) : (
+            messages.map((msg) => {
+              const isMe = msg.senderId._id === currentUserId;
+              return (
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                    isMe
-                      ? "bg-pink-600 text-white"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
+                  key={msg._id}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                 >
-                  <p className="text-sm">{msg.content}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      isMe ? "text-pink-200" : "text-gray-500"
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl break-words ${
+                      isMe
+                        ? "bg-pink-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                     }`}
                   >
-                    {new Date(msg.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                    <p className="text-sm">{msg.content}</p>
+                    <p
+                      className={`text-xs mt-1 ${
+                        isMe
+                          ? "text-pink-200"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Message Input */}

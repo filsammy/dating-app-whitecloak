@@ -16,19 +16,43 @@ exports.getPotentialMatches = async (req, res, next) => {
       throw createError("Please create your profile first", 404, "PROFILE_NOT_FOUND");
     }
 
-    // Find all users I've already interacted with (liked or skipped)
+    // Find all users I've already interacted with
     const existingMatches = await Match.find({
       fromUser: userId
-    }).select("toUser");
+    }).select("toUser liked isMatch skippedAt");
 
-    const excludedUserIds = existingMatches.map(m => m.toUser);
+    // Separate permanent skips from temporary skips
+    const now = Date.now();
+    // const SKIP_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    const SKIP_TIMEOUT = 5 * 1000; // 5 seconds for testing
+
+    const excludedUserIds = existingMatches
+      .filter(m => {
+        // If liked or matched, always exclude
+        if (m.liked || m.isMatch) return true;
+        
+        // If skipped, check if timeout has passed
+        if (m.skippedAt) {
+          const timeSinceSkip = now - new Date(m.skippedAt).getTime();
+          return timeSinceSkip < SKIP_TIMEOUT; // Only exclude if within timeout
+        }
+        
+        return false;
+      })
+      .map(m => m.toUser);
+
     excludedUserIds.push(userId); // Exclude self
 
-    // Build query for potential matches
+    // Build query for matching
     const query = {
-      userId: { $nin: excludedUserIds },
-      gender: { $in: myProfile.interestedIn }
+      userId: { $nin: excludedUserIds }
     };
+
+    // User must be interested in the target's gender
+    query.gender = { $in: myProfile.interestedIn };
+
+    // Target must be interested in user's gender
+    query.interestedIn = { $in: [myProfile.gender] };
 
     // Age filter
     if (minAge || maxAge) {
@@ -50,9 +74,6 @@ exports.getPotentialMatches = async (req, res, next) => {
       };
     }
 
-    // Also check if they're interested in my gender
-    query.interestedIn = { $in: [myProfile.gender] };
-
     const potentialMatches = await Profile.find(query).limit(parseInt(limit));
 
     res.status(200).json({
@@ -64,7 +85,7 @@ exports.getPotentialMatches = async (req, res, next) => {
   }
 };
 
-// SWIPE (LIKE OR SKIP) - ✅ FIXED
+// SWIPE (LIKE OR SKIP) - ✅ FIXED BUG #2
 exports.swipe = async (req, res, next) => {
   try {
     const fromUserId = req.user.id;
@@ -82,8 +103,7 @@ exports.swipe = async (req, res, next) => {
       throw createError("Cannot swipe on yourself", 400, "SELF_SWIPE");
     }
 
-    // ✅ FIX: Check if target user exists by their _id (not userId field)
-    // The frontend sends profile.userId which is actually the User._id
+    // Check if target user exists
     const targetProfile = await Profile.findOne({ userId: toUserId });
     if (!targetProfile) {
       throw createError("Target user not found", 404, "USER_NOT_FOUND");
@@ -96,7 +116,21 @@ exports.swipe = async (req, res, next) => {
     });
 
     if (existingSwipe) {
-      throw createError("You already swiped on this user", 409, "ALREADY_SWIPED");
+      // ✅ FIX: Allow re-swiping if timeout has passed
+      if (!existingSwipe.liked && existingSwipe.skippedAt) {
+        // const SKIP_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days
+        const SKIP_TIMEOUT = 5 * 1000; // 5 seconds for testing
+        const timeSinceSkip = Date.now() - new Date(existingSwipe.skippedAt).getTime();
+        
+        if (timeSinceSkip < SKIP_TIMEOUT) {
+          throw createError("You already swiped on this user", 409, "ALREADY_SWIPED");
+        }
+        
+        // Timeout passed, delete old swipe and allow new one
+        await Match.findByIdAndDelete(existingSwipe._id);
+      } else {
+        throw createError("You already swiped on this user", 409, "ALREADY_SWIPED");
+      }
     }
 
     // Check if the other user has already liked me
@@ -106,16 +140,24 @@ exports.swipe = async (req, res, next) => {
       liked: true
     });
 
-    const isMatch = liked && !!reverseMatch;
+    // ✅ FIX BUG #2: Changed from !!reverseMatch to reverseMatch !== null
+    // This prevents issues with truthy/falsy evaluation
+    const isMatch = liked && (reverseMatch !== null);
 
-    // Create the swipe record
-    const match = new Match({
+    // Create swipe record with skippedAt timestamp for rejections
+    const matchData = {
       fromUser: fromUserId,
       toUser: toUserId,
       liked,
       isMatch
-    });
+    };
 
+    // If user is skipping (not liking), add timestamp for timeout
+    if (!liked) {
+      matchData.skippedAt = new Date();
+    }
+
+    const match = new Match(matchData);
     await match.save();
 
     // If it's a match, update the reverse match as well
