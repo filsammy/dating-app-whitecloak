@@ -44,10 +44,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <form
         onSubmit={handleRegister}
-        className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md space-y-4"
+        className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md w-full max-w-md space-y-4 transition-colors"
       >
         <h1 className="text-2xl font-semibold text-center text-pink-600">
           Create an Account
@@ -59,13 +59,16 @@ export default function RegisterPage() {
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
+          className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
         />
+
         <Input
           type="password"
           placeholder="Password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
+          className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
         />
 
         {error && (
@@ -76,7 +79,7 @@ export default function RegisterPage() {
 
         <Button
           type="submit"
-          className="w-full bg-pink-600 hover:bg-pink-700 text-white flex items-center justify-center gap-2"
+          className="w-full bg-pink-600 hover:bg-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-70"
           disabled={loading}
         >
           {loading ? (

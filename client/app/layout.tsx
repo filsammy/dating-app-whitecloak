@@ -16,9 +16,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "DateMatch",
-  description: "Smart matching, simple connections",
+export const metadata = {
+  title: {
+    default: "Bemb",
+    template: "%s | Bemb",
+  },
+  description:
+    "Find real connections, not just matches — Bemb connects people authentically.",
+  icons: {
+    icon: "/Bemb.png",
+    shortcut: "/Bemb.png",
+  },
 };
 
 export default function RootLayout({

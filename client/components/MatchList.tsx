@@ -50,13 +50,19 @@ export default function MatchList({
         <button
           key={match.matchId}
           onClick={() => onSelectMatch(match)}
-          className={`w-full p-4 flex items-center gap-3 hover:bg-pink-50 transition-colors border-b dark:text-black ${
-            selectedMatchId === match.matchId ? "bg-pink-50" : ""
-          }`}
+          className={`w-full p-4 flex items-center gap-3 transition-colors border-b
+        ${
+          selectedMatchId === match.matchId
+            ? "bg-pink-50 dark:bg-gray-700"
+            : "bg-white dark:bg-gray-800"
+        }
+        hover:bg-pink-100 dark:hover:bg-gray-700
+        text-gray-800 dark:text-gray-200
+      `}
         >
           <Avatar className="size-12">
             <AvatarImage src={match.profile?.profilePic} />
-            <AvatarFallback className="bg-pink-100 text-pink-600">
+            <AvatarFallback className="bg-pink-100 text-pink-600 dark:bg-gray-600 dark:text-gray-200">
               {match.profile?.name?.charAt(0).toUpperCase() || "?"}
             </AvatarFallback>
           </Avatar>
@@ -65,12 +71,12 @@ export default function MatchList({
             <h3 className="font-semibold text-sm">
               {match.profile?.name || "Unknown"}
             </h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {match.profile?.age && `${match.profile.age} years old`}
             </p>
           </div>
 
-          <Heart className="size-4 text-pink-600" />
+          <Heart className="size-4 text-pink-600 dark:text-pink-400" />
         </button>
       ))}
     </div>
