@@ -7,7 +7,6 @@ import { User, Sparkles } from "lucide-react";
 import ProfileCard from "@/components/ProfileCard";
 import MatchModal from "@/components/MatchModal";
 import DiscoverFilters from "@/components/DiscoverFilters";
-
 interface Profile {
   _id: string;
   userId: string;
@@ -82,7 +81,7 @@ export default function DiscoverPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          toUserId: currentProfile.userId, // ✅ Fixed: using userId from profile
+          toUserId: currentProfile.userId, //
           liked,
         }),
       });

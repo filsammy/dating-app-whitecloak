@@ -44,7 +44,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-pink-50 to-pink-50 dark:from-gray-900 dark:to-gray-900">
       <form
         onSubmit={handleRegister}
         className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md w-full max-w-md space-y-4 transition-colors"
