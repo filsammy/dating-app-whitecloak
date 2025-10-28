@@ -64,7 +64,7 @@ exports.getPotentialMatches = async (req, res, next) => {
   }
 };
 
-// SWIPE (LIKE OR SKIP)
+// SWIPE (LIKE OR SKIP) - ✅ FIXED
 exports.swipe = async (req, res, next) => {
   try {
     const fromUserId = req.user.id;
@@ -82,7 +82,8 @@ exports.swipe = async (req, res, next) => {
       throw createError("Cannot swipe on yourself", 400, "SELF_SWIPE");
     }
 
-    // Check if target user exists
+    // ✅ FIX: Check if target user exists by their _id (not userId field)
+    // The frontend sends profile.userId which is actually the User._id
     const targetProfile = await Profile.findOne({ userId: toUserId });
     if (!targetProfile) {
       throw createError("Target user not found", 404, "USER_NOT_FOUND");
@@ -105,7 +106,7 @@ exports.swipe = async (req, res, next) => {
       liked: true
     });
 
-    const isMatch = liked && reverseMatch;
+    const isMatch = liked && !!reverseMatch;
 
     // Create the swipe record
     const match = new Match({

@@ -1,19 +1,10 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  MessageCircle,
-  Send,
-  Heart,
-  UserX,
-  ArrowLeft,
-  Users,
-} from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import MatchList from "@/components/MatchList";
+import ChatWindow from "@/components/ChatWindow";
 
 interface Profile {
   _id: string;
@@ -53,7 +44,10 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const uniqueMatches = Array.from(
+    new Map(matches.map((m) => [m.userId, m])).values()
+  );
 
   useEffect(() => {
     fetchMatches();
@@ -62,21 +56,12 @@ export default function ChatPage() {
   useEffect(() => {
     if (selectedMatch) {
       fetchMessages(selectedMatch.matchId);
-      // Poll for new messages every 3 seconds
       const interval = setInterval(() => {
         fetchMessages(selectedMatch.matchId);
       }, 3000);
       return () => clearInterval(interval);
     }
   }, [selectedMatch]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
 
   const fetchMatches = async () => {
     try {
@@ -175,13 +160,13 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
+    <main className="min-h-screen bg-linear-to-b from-pink-50 to-white dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-6xl mx-auto h-screen flex">
         {/* Matches Sidebar */}
         <div
           className={`${
             selectedMatch ? "hidden md:block" : "block"
-          } w-full md:w-80 border-r bg-white`}
+          } w-full md:w-80 border-r bg-white dark:bg-gray-900`}
         >
           <div className="p-4 border-b">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -189,176 +174,35 @@ export default function ChatPage() {
               Your Matches
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {matches.length} {matches.length === 1 ? "match" : "matches"}
+              {uniqueMatches.length}{" "}
+              {uniqueMatches.length === 1 ? "match" : "matches"}
             </p>
           </div>
 
-          <div className="overflow-y-auto h-[calc(100vh-5rem)]">
-            {matches.length === 0 ? (
-              <div className="p-8 text-center">
-                <Users className="size-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No matches yet. Start swiping!
-                </p>
-              </div>
-            ) : (
-              matches.map((match) => (
-                <button
-                  key={match.matchId}
-                  onClick={() => setSelectedMatch(match)}
-                  className={`w-full p-4 flex items-center gap-3 hover:bg-pink-50 transition-colors border-b ${
-                    selectedMatch?.matchId === match.matchId ? "bg-pink-50" : ""
-                  }`}
-                >
-                  <Avatar className="size-12">
-                    <AvatarImage src={match.profile?.profilePic} />
-                    <AvatarFallback className="bg-pink-100 text-pink-600">
-                      {match.profile?.name?.charAt(0).toUpperCase() || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-left">
-                    <h3 className="font-semibold text-sm">
-                      {match.profile?.name || "Unknown"}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {match.profile?.age && `${match.profile.age} years old`}
-                    </p>
-                  </div>
-                  <Heart className="size-4 text-pink-600" />
-                </button>
-              ))
-            )}
-          </div>
+          <MatchList
+            matches={matches}
+            selectedMatchId={selectedMatch?.matchId || null}
+            onSelectMatch={setSelectedMatch}
+          />
         </div>
 
         {/* Chat Area */}
         <div
           className={`${
             selectedMatch ? "block" : "hidden md:block"
-          } flex-1 flex flex-col bg-white`}
+          } flex-1 flex flex-col bg-white dark:bg-gray-900`}
         >
-          {selectedMatch ? (
-            <>
-              {/* Chat Header */}
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="md:hidden"
-                    onClick={() => setSelectedMatch(null)}
-                  >
-                    <ArrowLeft className="size-5" />
-                  </Button>
-                  <Avatar className="size-10">
-                    <AvatarImage src={selectedMatch.profile?.profilePic} />
-                    <AvatarFallback className="bg-pink-100 text-pink-600">
-                      {selectedMatch.profile?.name?.charAt(0).toUpperCase() ||
-                        "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">
-                      {selectedMatch.profile?.name || "Unknown"}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedMatch.profile?.age &&
-                        `${selectedMatch.profile.age} years old`}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => handleUnmatch(selectedMatch.userId)}
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                >
-                  <UserX className="size-5" />
-                </Button>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <MessageCircle className="size-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">
-                        No messages yet. Say hi! 👋
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  messages.map((msg) => {
-                    const isMe = msg.senderId._id === user?._id;
-                    return (
-                      <div
-                        key={msg._id}
-                        className={`flex ${
-                          isMe ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                            isMe
-                              ? "bg-pink-600 text-white"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          <p className="text-sm">{msg.content}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              isMe ? "text-pink-200" : "text-gray-500"
-                            }`}
-                          >
-                            {new Date(msg.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Message Input */}
-              <form onSubmit={sendMessage} className="p-4 border-t flex gap-2">
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  disabled={sending}
-                  className="flex-1"
-                />
-                <Button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  className="bg-pink-600 hover:bg-pink-700"
-                >
-                  {sending ? (
-                    <Spinner className="size-4" />
-                  ) : (
-                    <Send className="size-4" />
-                  )}
-                </Button>
-              </form>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center p-8">
-                <MessageCircle className="size-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  Select a Match
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose a conversation from the left to start chatting
-                </p>
-              </div>
-            </div>
-          )}
+          <ChatWindow
+            match={selectedMatch}
+            messages={messages}
+            newMessage={newMessage}
+            sending={sending}
+            currentUserId={user?._id || ""}
+            onBack={() => setSelectedMatch(null)}
+            onUnmatch={handleUnmatch}
+            onSendMessage={sendMessage}
+            onMessageChange={setNewMessage}
+          />
         </div>
       </div>
     </main>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Header() {
   return (
@@ -24,6 +25,9 @@ export default function Header() {
         </li>
         <li>
           <Link href="/logout">Logout</Link>
+        </li>
+        <li>
+          <ThemeToggle />
         </li>
       </ul>
     </div>

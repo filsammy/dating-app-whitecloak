@@ -52,23 +52,33 @@ exports.getAllConversations = async (req, res, next) => {
       ]
     }).sort({ createdAt: -1 });
 
-    // Get last message for each match
+    // ✅ Deduplicate matches so each pair only appears once
+    const uniquePairs = new Map();
+    for (const match of matches) {
+      const pairKey = [match.fromUser.toString(), match.toUser.toString()]
+        .sort()
+        .join("_"); // always same order for both directions
+      if (!uniquePairs.has(pairKey)) {
+        uniquePairs.set(pairKey, match);
+      }
+    }
+    const uniqueMatches = Array.from(uniquePairs.values());
+
+    // Get last message for each unique match
     const conversations = await Promise.all(
-      matches.map(async (match) => {
+      uniqueMatches.map(async (match) => {
         const lastMessage = await Message.findOne({ matchId: match._id })
           .sort({ createdAt: -1 })
           .populate("senderId", "email")
           .populate("receiverId", "email");
 
-        const otherUserId = match.fromUser.toString() === userId 
-          ? match.toUser 
-          : match.fromUser;
+        const otherUserId =
+          match.fromUser.toString() === userId ? match.toUser : match.fromUser;
 
-        // Get unread count
+        // Get unread count (optional enhancement later: add `read: false` field)
         const unreadCount = await Message.countDocuments({
           matchId: match._id,
           receiverId: userId,
-          // You can add a 'read' field to Message schema if you want read receipts
         });
 
         return {
@@ -76,14 +86,14 @@ exports.getAllConversations = async (req, res, next) => {
           otherUserId,
           lastMessage,
           unreadCount,
-          createdAt: match.createdAt
+          createdAt: match.createdAt,
         };
       })
     );
 
     res.status(200).json({
       conversations,
-      count: conversations.length
+      count: conversations.length,
     });
   } catch (err) {
     next(err);
