@@ -161,7 +161,7 @@ export default function ProfileForm({
               onClick={() => setForm({ ...form, gender })}
               className={
                 form.gender === gender
-                  ? "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 border-0"
+                  ? "bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 border-0"
                   : "border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20"
               }
             >
@@ -187,7 +187,7 @@ export default function ProfileForm({
               onClick={() => handleGenderInterestToggle(gender)}
               className={
                 form.interestedIn.includes(gender)
-                  ? "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 border-0"
+                  ? "bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 border-0"
                   : "border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20"
               }
             >
@@ -252,7 +252,7 @@ export default function ProfileForm({
       <div className="flex gap-3 pt-4">
         <Button
           type="submit"
-          className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500 py-6 rounded-full shadow-lg hover:shadow-xl transition-all"
+          className="flex-1 bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500 py-6 rounded-full shadow-lg hover:shadow-xl transition-all"
           disabled={saving}
         >
           {saving ? (

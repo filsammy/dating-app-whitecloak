@@ -8,19 +8,8 @@ import ProfileCard from "@/components/ProfileCard";
 import MatchModal from "@/components/MatchModal";
 import DiscoverFilters from "@/components/DiscoverFilters";
 
-interface Profile {
-  _id: string;
-  userId: string;
-  name: string;
-  age: number;
-  bio: string;
-  profilePic: string;
-  gender: string;
-  interests: string[];
-  location: {
-    coordinates: [number, number];
-  };
-}
+// 🧩 Import API functions + types
+import { fetchDiscoverProfiles, swipeProfile, Profile } from "@/api/discover";
 
 export default function DiscoverPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -36,80 +25,48 @@ export default function DiscoverPage() {
   });
 
   useEffect(() => {
-    fetchProfiles();
+    loadProfiles();
   }, []);
 
-  const fetchProfiles = async () => {
+  const loadProfiles = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("accessToken");
-      const params = new URLSearchParams();
-      if (filters.maxDistance)
-        params.append("maxDistance", filters.maxDistance);
-      if (filters.minAge) params.append("minAge", filters.minAge);
-      if (filters.maxAge) params.append("maxAge", filters.maxAge);
-      params.append("limit", "20");
-
-      const res = await fetch(
-        `http://localhost:5000/matches/discover?${params.toString()}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setProfiles(data.matches);
-      }
+      const data = await fetchDiscoverProfiles(filters, token);
+      setProfiles(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error loading profiles:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle swipe using the API service
   const handleSwipe = async (liked: boolean) => {
     if (swiping || currentIndex >= profiles.length) return;
-
     setSwiping(true);
+
     const currentProfile = profiles[currentIndex];
+    const token = localStorage.getItem("accessToken");
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5000/matches/swipe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          toUserId: currentProfile.userId,
-          liked,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.isMatch) {
-          setMatchedName(currentProfile.name);
-          setMatchModal(true);
-        }
-      } else {
-        const errorData = await res.json();
-        console.error("Swipe error:", errorData);
+      const result = await swipeProfile(currentProfile.userId, liked, token);
+      if (result.isMatch) {
+        setMatchedName(currentProfile.name);
+        setMatchModal(true);
       }
-
-      setCurrentIndex((prev) => prev + 1);
     } catch (err) {
-      console.error(err);
+      console.error("Swipe failed:", err);
     } finally {
+      setCurrentIndex((prev) => prev + 1);
       setSwiping(false);
     }
   };
 
+  // Reapply filters
   const applyFilters = () => {
     setCurrentIndex(0);
-    setLoading(true);
-    fetchProfiles();
+    loadProfiles();
   };
 
   const handleCloseModal = () => {

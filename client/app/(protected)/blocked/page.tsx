@@ -56,7 +56,7 @@ export default function BlockedUsersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-900 dark:to-gray-800 p-6">
+    <main className="min-h-screen bg-linear-to-b from-pink-50 to-white dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md">
           {/* Header */}
