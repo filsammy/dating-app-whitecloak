@@ -1,10 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Heart, Trash2 } from "lucide-react";
+import { Heart, Trash2, Sparkles } from "lucide-react";
+import ImageUpload from "@/components/ImageUpload";
+import LocationSelector from "@/components/LocationSelector";
+import InterestsSelector from "@/components/InterestsSelector";
 
 interface ProfileFormProps {
   initialData: {
@@ -32,7 +34,21 @@ export default function ProfileForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [form, setForm] = useState(initialData);
+  const [form, setForm] = useState({
+    ...initialData,
+    interestsArray: initialData.interests
+      ? initialData.interests.split(",").map((i) => i.trim())
+      : [],
+  });
+
+  useEffect(() => {
+    setForm({
+      ...initialData,
+      interestsArray: initialData.interests
+        ? initialData.interests.split(",").map((i) => i.trim())
+        : [],
+    });
+  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +69,7 @@ export default function ProfileForm({
         },
         gender: form.gender,
         interestedIn: form.interestedIn,
-        interests: form.interests
-          .split(",")
-          .map((i) => i.trim())
-          .filter((i) => i),
+        interests: form.interestsArray,
       };
 
       const res = await fetch("http://localhost:5000/profiles", {
@@ -95,31 +108,33 @@ export default function ProfileForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Profile Picture Preview */}
-      <div className="flex justify-center">
-        <Avatar className="size-24">
-          <AvatarImage src={form.profilePic} />
-          <AvatarFallback className="bg-pink-100 text-pink-600 text-2xl">
-            {form.name.charAt(0).toUpperCase() || "?"}
-          </AvatarFallback>
-        </Avatar>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Profile Picture Upload */}
+      <ImageUpload
+        currentImage={form.profilePic}
+        userName={form.name}
+        onImageSelect={(imageUrl) => setForm({ ...form, profilePic: imageUrl })}
+      />
 
       {/* Name */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Name</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+          Name *
+        </label>
         <Input
           placeholder="Your name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
+          className="border-pink-200 dark:border-pink-800 focus:border-pink-500"
         />
       </div>
 
       {/* Age */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Age</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+          Age *
+        </label>
         <Input
           type="number"
           placeholder="18"
@@ -128,12 +143,15 @@ export default function ProfileForm({
           value={form.age}
           onChange={(e) => setForm({ ...form, age: e.target.value })}
           required
+          className="border-pink-200 dark:border-pink-800 focus:border-pink-500"
         />
       </div>
 
       {/* Gender */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Gender</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+          Gender *
+        </label>
         <div className="flex gap-2 flex-wrap">
           {["male", "female", "non-binary", "other"].map((gender) => (
             <Button
@@ -142,7 +160,9 @@ export default function ProfileForm({
               variant={form.gender === gender ? "default" : "outline"}
               onClick={() => setForm({ ...form, gender })}
               className={
-                form.gender === gender ? "bg-pink-600 hover:bg-pink-700" : ""
+                form.gender === gender
+                  ? "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 border-0"
+                  : "border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20"
               }
             >
               {gender}
@@ -153,7 +173,9 @@ export default function ProfileForm({
 
       {/* Interested In */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Interested In</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+          Interested In *
+        </label>
         <div className="flex gap-2 flex-wrap">
           {["male", "female", "non-binary", "other"].map((gender) => (
             <Button
@@ -165,8 +187,8 @@ export default function ProfileForm({
               onClick={() => handleGenderInterestToggle(gender)}
               className={
                 form.interestedIn.includes(gender)
-                  ? "bg-pink-600 hover:bg-pink-700"
-                  : ""
+                  ? "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 border-0"
+                  : "border-pink-200 dark:border-pink-800 hover:bg-pink-50 dark:hover:bg-pink-900/20"
               }
             >
               {gender}
@@ -177,97 +199,82 @@ export default function ProfileForm({
 
       {/* Bio */}
       <div>
-        <label className="text-sm font-medium mb-1 block">Bio</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+          Bio
+        </label>
         <textarea
           placeholder="Tell us about yourself..."
           value={form.bio}
           onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          className="w-full min-h-24 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="w-full min-h-28 px-4 py-3 border-2 border-pink-200 dark:border-pink-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-pink-400 focus:border-transparent bg-white dark:bg-gray-900 resize-none"
+          maxLength={500}
         />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {form.bio.length}/500 characters
+        </p>
       </div>
 
-      {/* Profile Picture URL */}
-      <div>
-        <label className="text-sm font-medium mb-1 block">
-          Profile Picture URL
-        </label>
-        <Input
-          placeholder="https://example.com/photo.jpg"
-          value={form.profilePic}
-          onChange={(e) => setForm({ ...form, profilePic: e.target.value })}
-        />
-      </div>
+      {/* Location Selector */}
+      <LocationSelector
+        latitude={form.latitude}
+        longitude={form.longitude}
+        onLocationChange={(lat, lng) =>
+          setForm({ ...form, latitude: lat, longitude: lng })
+        }
+      />
 
-      {/* Location */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium mb-1 flex items-center gap-1">
-            <MapPin className="size-4" /> Latitude
-          </label>
-          <Input
-            type="number"
-            step="any"
-            placeholder="10.3157"
-            value={form.latitude}
-            onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium mb-1 flex items-center gap-1">
-            <MapPin className="size-4" /> Longitude
-          </label>
-          <Input
-            type="number"
-            step="any"
-            placeholder="123.8854"
-            value={form.longitude}
-            onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      {/* Interests */}
-      <div>
-        <label className="text-sm font-medium mb-1 block">
-          Interests (comma-separated)
-        </label>
-        <Input
-          placeholder="hiking, music, travel, cooking"
-          value={form.interests}
-          onChange={(e) => setForm({ ...form, interests: e.target.value })}
-        />
-      </div>
+      {/* Interests Selector */}
+      <InterestsSelector
+        selectedInterests={form.interestsArray}
+        onInterestsChange={(interests) =>
+          setForm({ ...form, interestsArray: interests })
+        }
+      />
 
       {/* Error/Success Messages */}
-      {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+            {error}
+          </p>
+        </div>
+      )}
       {success && (
-        <p className="text-sm text-green-500 font-medium">{success}</p>
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-2">
+            <Sparkles className="size-4" />
+            {success}
+          </p>
+        </div>
       )}
 
-      {/* Submit Button */}
-      <div className="flex gap-2">
+      {/* Submit Buttons */}
+      <div className="flex gap-3 pt-4">
         <Button
           type="submit"
-          className="flex-1 bg-pink-600 hover:bg-pink-700"
+          className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500 py-6 rounded-full shadow-lg hover:shadow-xl transition-all"
           disabled={saving}
         >
           {saving ? (
             <>
-              <Spinner className="size-4" />
+              <Spinner className="size-5 text-white" />
               <span>Saving...</span>
             </>
           ) : (
             <>
-              <Heart className="size-4" />
+              <Heart className="size-5" />
               {hasProfile ? "Update Profile" : "Create Profile"}
             </>
           )}
         </Button>
         {hasProfile && (
-          <Button type="button" variant="destructive" onClick={onDelete}>
-            <Trash2 className="size-4" />
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={onDelete}
+            className="px-6 py-6 rounded-full"
+          >
+            <Trash2 className="size-5" />
           </Button>
         )}
       </div>

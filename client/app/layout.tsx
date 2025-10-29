@@ -17,16 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: {
-    default: "Bemb",
-    template: "%s | Bemb",
-  },
+  title: "Bemb",
   description:
-    "Find real connections, not just matches — Bemb connects people authentically.",
-  icons: {
-    icon: "/Bemb.png",
-    shortcut: "/Bemb.png",
-  },
+    "Find real connections, not just matches. Where meaningful relationships begin.",
 };
 
 export default function RootLayout({

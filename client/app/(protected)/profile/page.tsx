@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "lucide-react";
+import { Heart, User, Sparkles } from "lucide-react";
 import ProfileForm from "@/components/ProfileForm";
 
 export default function ProfilePage() {
@@ -62,7 +62,12 @@ export default function ProfilePage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete your profile?")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete your profile? This action cannot be undone."
+      )
+    )
+      return;
 
     try {
       const token = localStorage.getItem("accessToken");
@@ -92,20 +97,40 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner className="size-8 text-pink-600" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-linear-to-b from-pink-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <Spinner className="size-12 text-pink-600 dark:text-pink-400" />
+        <p className="mt-4 text-base text-gray-600 dark:text-gray-300 font-medium">
+          Loading profile...
+        </p>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-pink-50 to-white dark:from-gray-900 dark:to-gray-800 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <Card>
+    <main className="min-h-screen bg-linear-to-b from-pink-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="flex items-center justify-center gap-3">
+            <User className="size-8 text-pink-600 dark:text-pink-400" />
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100">
+              {hasProfile ? "Edit Profile" : "Create Profile"}
+            </h1>
+            <Sparkles className="size-8 text-pink-600 dark:text-pink-400 animate-pulse" />
+          </div>
+          <p className="text-gray-600 dark:text-gray-300">
+            {hasProfile
+              ? "Update your information to find better matches"
+              : "Tell us about yourself to get started"}
+          </p>
+        </div>
+
+        {/* Profile Form Card */}
+        <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-pink-100 dark:border-pink-900/30 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="size-5 text-pink-600" />
-              {hasProfile ? "Edit Your Profile" : "Create Your Profile"}
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Heart className="size-5 text-pink-600 dark:text-pink-400" />
+              {hasProfile ? "Your Profile" : "Build Your Profile"}
             </CardTitle>
           </CardHeader>
           <CardContent>
