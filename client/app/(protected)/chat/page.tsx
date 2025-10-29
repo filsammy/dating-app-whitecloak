@@ -11,6 +11,7 @@ import {
   sendMessage,
   unmatchUser,
 } from "@/api/messages";
+import { blockUser } from "@/api/block";
 
 // ---------- TYPES ----------
 interface Profile {
@@ -54,6 +55,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // ---------- LOAD MATCHES ----------
   useEffect(() => {
@@ -90,11 +92,12 @@ export default function ChatPage() {
 
   const loadMessages = async (matchId: string, initial = false) => {
     try {
-      const { messages: newMessages, hasMore } = await fetchMessages(
-        matchId,
-        10,
-        initial ? 0 : skip
-      );
+      if (!initial) {
+        setLoadingMore(true);
+      }
+
+      const { messages: newMessages, hasMore: moreAvailable } =
+        await fetchMessages(matchId, 10, initial ? 0 : skip);
 
       if (initial) {
         setMessages(newMessages);
@@ -104,9 +107,11 @@ export default function ChatPage() {
         setSkip((prev) => prev + 10);
       }
 
-      setHasMore(hasMore);
+      setHasMore(moreAvailable);
     } catch (err) {
       console.error("Failed to load messages:", err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -122,7 +127,7 @@ export default function ChatPage() {
         newMessage.trim()
       );
       setNewMessage("");
-      await loadMessages(selectedMatch.matchId);
+      // Don't reload all messages, just wait for the polling interval
     } catch (err) {
       console.error("Failed to send message:", err);
     } finally {
@@ -140,6 +145,23 @@ export default function ChatPage() {
       await loadMatches();
     } catch (err) {
       console.error("Failed to unmatch:", err);
+    }
+  };
+
+  const handleBlock = async (userId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to block this user? They will no longer be able to contact you."
+      )
+    )
+      return;
+
+    try {
+      await blockUser(userId);
+      setSelectedMatch(null);
+      await loadMatches();
+    } catch (err) {
+      console.error("Failed to block user:", err);
     }
   };
 
@@ -193,12 +215,14 @@ export default function ChatPage() {
             currentUserId={user?._id || ""}
             onBack={() => setSelectedMatch(null)}
             onUnmatch={handleUnmatch}
+            onBlock={handleBlock}
             onSendMessage={handleSendMessage}
             onMessageChange={setNewMessage}
             onLoadMore={() =>
               selectedMatch && loadMessages(selectedMatch.matchId)
             }
             hasMore={hasMore}
+            loadingMore={loadingMore}
           />
         </div>
       </div>

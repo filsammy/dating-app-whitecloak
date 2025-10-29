@@ -1,40 +1,14 @@
-"use client";
-import { useRef, useEffect } from "react";
+import { ArrowLeft, MoreVertical, Send, Ban, UserX } from "lucide-react";
+import { format } from "date-fns";
+import { useState, useRef, useEffect } from "react";
+import type { Match, Message } from "@/app/(protected)/chat/page";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Spinner } from "@/components/ui/spinner";
-import { Send, UserX, ArrowLeft, MessageCircle } from "lucide-react";
-
-interface Profile {
-  _id: string;
-  userId: string;
-  name: string;
-  age: number;
-  profilePic: string;
-}
-
-interface Match {
-  matchId: string;
-  userId: string;
-  profile: Profile;
-  matchedAt: string;
-}
-
-interface Message {
-  _id: string;
-  matchId: string;
-  senderId: {
-    _id: string;
-    email: string;
-  };
-  receiverId: {
-    _id: string;
-    email: string;
-  };
-  content: string;
-  createdAt: string;
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatWindowProps {
   match: Match | null;
@@ -42,12 +16,14 @@ interface ChatWindowProps {
   newMessage: string;
   sending: boolean;
   currentUserId: string;
-  hasMore: boolean;
   onBack: () => void;
   onUnmatch: (userId: string) => void;
+  onBlock: (userId: string) => void;
   onSendMessage: (e: React.FormEvent) => void;
-  onMessageChange: (message: string) => void;
+  onMessageChange: (value: string) => void;
   onLoadMore: () => void;
+  hasMore: boolean;
+  loadingMore?: boolean;
 }
 
 export default function ChatWindow({
@@ -56,151 +32,202 @@ export default function ChatWindow({
   newMessage,
   sending,
   currentUserId,
-  hasMore,
   onBack,
   onUnmatch,
+  onBlock,
   onSendMessage,
   onMessageChange,
   onLoadMore,
+  hasMore,
+  loadingMore = false,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [prevScrollHeight, setPrevScrollHeight] = useState(0);
+  const [prevMessagesLength, setPrevMessagesLength] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  // Track if user is at bottom of chat
+  const checkIfAtBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    const container = messagesContainerRef.current;
+    const threshold = 100; // pixels from bottom
+    return (
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      threshold
+    );
+  };
+
+  // Only scroll to bottom on initial load or when new messages arrive (not when loading old ones)
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    // Check if messages were added at the end (new messages)
+    const messagesIncreased = messages.length > prevMessagesLength;
+    const shouldScrollToBottom =
+      messagesIncreased && isAtBottom && !loadingMore;
+
+    if (shouldScrollToBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    setPrevMessagesLength(messages.length);
+  }, [messages.length]);
+
+  // Maintain scroll position when loading older messages
+  useEffect(() => {
+    if (loadingMore && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const newScrollHeight = container.scrollHeight;
+      const scrollDiff = newScrollHeight - prevScrollHeight;
+      container.scrollTop = container.scrollTop + scrollDiff;
+    }
+  }, [messages, loadingMore, prevScrollHeight]);
+
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const container = messagesContainerRef.current;
+
+    // Update isAtBottom state
+    setIsAtBottom(checkIfAtBottom());
+
+    // Check if scrolled to top
+    if (container.scrollTop === 0 && hasMore && !loadingMore) {
+      setPrevScrollHeight(container.scrollHeight);
+      onLoadMore();
+    }
+  };
 
   if (!match) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center p-8">
-          <MessageCircle className="size-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            Select a Match
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Choose a conversation from the left to start chatting
-          </p>
-        </div>
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+        Select a match to start chatting
       </div>
     );
   }
 
   return (
     <>
-      {/* Chat Header */}
-      <div className="p-4 border-b flex items-center justify-between">
+      {/* Header */}
+      <div className="p-4 border-b flex items-center justify-between bg-white dark:bg-gray-900">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            size="icon-sm"
-            className="md:hidden"
+            size="icon"
             onClick={onBack}
+            className="md:hidden"
           >
             <ArrowLeft className="size-5" />
           </Button>
-          <Avatar className="size-10">
-            <AvatarImage src={match.profile?.profilePic} />
-            <AvatarFallback className="bg-pink-100 text-pink-600">
-              {match.profile?.name?.charAt(0).toUpperCase() || "?"}
-            </AvatarFallback>
-          </Avatar>
+          <img
+            src={match.profile.profilePic || "/placeholder-avatar.png"}
+            alt={match.profile.name}
+            className="size-10 rounded-full object-cover"
+          />
           <div>
-            <h3 className="font-semibold">
-              {match.profile?.name || "Unknown"}
-            </h3>
+            <h3 className="font-semibold">{match.profile.name}</h3>
             <p className="text-xs text-muted-foreground">
-              {match.profile?.age && `${match.profile.age} years old`}
+              {match.profile.age} years old
             </p>
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => onUnmatch(match.userId)}
-          className="text-red-500 hover:text-red-600 hover:bg-red-50"
-        >
-          <UserX className="size-5" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="size-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => onUnmatch(match.userId)}
+              className="text-orange-600 focus:text-orange-600"
+            >
+              <UserX className="size-4 mr-2" />
+              Unmatch
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onBlock(match.userId)}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Ban className="size-4 mr-2" />
+              Block User
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {hasMore && (
-            <div className="flex justify-center">
-              <button
-                onClick={onLoadMore}
-                className="text-sm text-pink-600 hover:underline mb-2"
-              >
-                Load older messages
-              </button>
-            </div>
-          )}
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+      >
+        {hasMore && (
+          <div className="text-center py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? "Loading..." : "Load older messages"}
+            </Button>
+          </div>
+        )}
 
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <MessageCircle className="size-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No messages yet. Say hi! 👋
+        {messages.map((msg) => {
+          const isOwn = msg.senderId._id === currentUserId;
+          return (
+            <div
+              key={msg._id}
+              className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                  isOwn
+                    ? "bg-pink-600 text-white"
+                    : "bg-gray-100 dark:bg-gray-800"
+                }`}
+              >
+                <p className="text-sm">{msg.content}</p>
+                <p
+                  className={`text-xs mt-1 ${
+                    isOwn ? "text-pink-100" : "text-muted-foreground"
+                  }`}
+                >
+                  {format(new Date(msg.createdAt), "p")}
                 </p>
               </div>
             </div>
-          ) : (
-            messages.map((msg) => {
-              const isMe = msg.senderId._id === currentUserId;
-              return (
-                <div
-                  key={msg._id}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl wrap-break-word ${
-                      isMe
-                        ? "bg-pink-600 text-white"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-                    }`}
-                  >
-                    <p className="text-sm">{msg.content}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        isMe
-                          ? "text-pink-200"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
-                      {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              );
-            })
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <form onSubmit={onSendMessage} className="p-4 border-t flex gap-2">
-        <Input
-          placeholder="Type a message..."
-          value={newMessage}
-          onChange={(e) => onMessageChange(e.target.value)}
-          disabled={sending}
-          className="flex-1"
-        />
-        <Button
-          type="submit"
-          disabled={sending || !newMessage.trim()}
-          className="bg-pink-600 hover:bg-pink-700"
-        >
-          {sending ? (
-            <Spinner className="size-4" />
-          ) : (
-            <Send className="size-4" />
-          )}
-        </Button>
+      {/* Input */}
+      <form
+        onSubmit={onSendMessage}
+        className="p-4 border-t bg-white dark:bg-gray-900"
+      >
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => onMessageChange(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-pink-600 dark:bg-gray-800 dark:border-gray-700"
+            disabled={sending}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            className="rounded-full bg-pink-600 hover:bg-pink-700"
+            disabled={sending || !newMessage.trim()}
+          >
+            <Send className="size-5" />
+          </Button>
+        </div>
       </form>
     </>
   );
