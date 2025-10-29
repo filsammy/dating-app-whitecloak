@@ -84,15 +84,22 @@ export default function ChatPage() {
     loadMessages(selectedMatch.matchId, true); // initial load
 
     const interval = setInterval(() => {
-      loadMessages(selectedMatch.matchId, true); // refresh newest messages
+      // Only refresh if we're at skip 0 (showing most recent messages)
+      if (skip === 10) {
+        loadMessages(selectedMatch.matchId, true, true); // refresh newest messages
+      }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedMatch]);
+  }, [selectedMatch, skip]);
 
-  const loadMessages = async (matchId: string, initial = false) => {
+  const loadMessages = async (
+    matchId: string,
+    initial = false,
+    polling = false
+  ) => {
     try {
-      if (!initial) {
+      if (!initial && !polling) {
         setLoadingMore(true);
       }
 
@@ -100,8 +107,19 @@ export default function ChatPage() {
         await fetchMessages(matchId, 10, initial ? 0 : skip);
 
       if (initial) {
-        setMessages(newMessages);
-        setSkip(10);
+        if (polling) {
+          // Only update if there are new messages, keep existing older messages
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m._id));
+            const actuallyNewMessages = newMessages.filter(
+              (m) => !existingIds.has(m._id)
+            );
+            return [...prev, ...actuallyNewMessages];
+          });
+        } else {
+          setMessages(newMessages);
+          setSkip(10);
+        }
       } else {
         setMessages((prev) => [...newMessages, ...prev]); // prepend older messages
         setSkip((prev) => prev + 10);

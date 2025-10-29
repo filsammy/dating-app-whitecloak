@@ -71,8 +71,16 @@ exports.unblockUser = async (req, res, next) => {
     );
     await user.save();
 
+    // ✅ NEW: Clear swipe history so they can see each other again
+    await Match.deleteMany({
+      $or: [
+        { fromUser: userId, toUser: targetUserId },
+        { fromUser: targetUserId, toUser: userId }
+      ]
+    });
+
     res.status(200).json({ 
-      message: "User unblocked successfully",
+      message: "User unblocked successfully. You can now see each other in discovery again.",
       unblockedUserId: targetUserId
     });
   } catch (err) {

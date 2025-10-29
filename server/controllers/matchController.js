@@ -1,6 +1,7 @@
 const Match = require("../models/Match");
 const Profile = require("../models/Profile");
 const Message = require("../models/Message");
+const User = require("../models/User");
 const createError = require("../utils/createError");
 
 // GET POTENTIAL MATCHES (DISCOVERY)
@@ -16,6 +17,16 @@ exports.getPotentialMatches = async (req, res, next) => {
       throw createError("Please create your profile first", 404, "PROFILE_NOT_FOUND");
     }
 
+    // ✅ NEW: Get blocked users list
+    const currentUser = await User.findById(userId);
+    const myBlockedUsers = currentUser.blockedUsers || [];
+    
+    // ✅ NEW: Get users who blocked me
+    const usersWhoBlockedMe = await User.find({
+      blockedUsers: userId
+    }).select('_id');
+    const blockedByUserIds = usersWhoBlockedMe.map(u => u._id.toString());
+
     // Find all users I've already interacted with
     const existingMatches = await Match.find({
       fromUser: userId
@@ -23,8 +34,8 @@ exports.getPotentialMatches = async (req, res, next) => {
 
     // Separate permanent skips from temporary skips
     const now = Date.now();
-    // const SKIP_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
     const SKIP_TIMEOUT = 5 * 1000; // 5 seconds for testing
+    // const SKIP_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in production
 
     const excludedUserIds = existingMatches
       .filter(m => {
@@ -39,9 +50,12 @@ exports.getPotentialMatches = async (req, res, next) => {
         
         return false;
       })
-      .map(m => m.toUser);
+      .map(m => m.toUser.toString());
 
+    // ✅ NEW: Add blocked users to exclusion list
     excludedUserIds.push(userId); // Exclude self
+    excludedUserIds.push(...myBlockedUsers.map(id => id.toString()));
+    excludedUserIds.push(...blockedByUserIds);
 
     // Build query for matching
     const query = {
@@ -85,7 +99,7 @@ exports.getPotentialMatches = async (req, res, next) => {
   }
 };
 
-// SWIPE (LIKE OR SKIP) - ✅ FIXED BUG #2
+// SWIPE (LIKE OR SKIP)
 exports.swipe = async (req, res, next) => {
   try {
     const fromUserId = req.user.id;
@@ -103,10 +117,25 @@ exports.swipe = async (req, res, next) => {
       throw createError("Cannot swipe on yourself", 400, "SELF_SWIPE");
     }
 
-    // Check if target user exists
+    // ✅ NEW: Check if either user has blocked the other
+    const currentUser = await User.findById(fromUserId);
+    const targetUser = await User.findById(toUserId);
+    
+    if (!targetUser) {
+      throw createError("Target user not found", 404, "USER_NOT_FOUND");
+    }
+
+    const myBlockedUsers = currentUser.blockedUsers || [];
+    const theirBlockedUsers = targetUser.blockedUsers || [];
+
+    if (myBlockedUsers.includes(toUserId) || theirBlockedUsers.includes(fromUserId)) {
+      throw createError("Cannot interact with this user", 403, "USER_BLOCKED");
+    }
+
+    // Check if target profile exists
     const targetProfile = await Profile.findOne({ userId: toUserId });
     if (!targetProfile) {
-      throw createError("Target user not found", 404, "USER_NOT_FOUND");
+      throw createError("Target profile not found", 404, "PROFILE_NOT_FOUND");
     }
 
     // Check if already swiped
@@ -116,10 +145,10 @@ exports.swipe = async (req, res, next) => {
     });
 
     if (existingSwipe) {
-      // ✅ FIX: Allow re-swiping if timeout has passed
+      // Allow re-swiping if timeout has passed
       if (!existingSwipe.liked && existingSwipe.skippedAt) {
-        // const SKIP_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days
         const SKIP_TIMEOUT = 5 * 1000; // 5 seconds for testing
+        // const SKIP_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in production
         const timeSinceSkip = Date.now() - new Date(existingSwipe.skippedAt).getTime();
         
         if (timeSinceSkip < SKIP_TIMEOUT) {
@@ -140,8 +169,6 @@ exports.swipe = async (req, res, next) => {
       liked: true
     });
 
-    // ✅ FIX BUG #2: Changed from !!reverseMatch to reverseMatch !== null
-    // This prevents issues with truthy/falsy evaluation
     const isMatch = liked && (reverseMatch !== null);
 
     // Create swipe record with skippedAt timestamp for rejections
