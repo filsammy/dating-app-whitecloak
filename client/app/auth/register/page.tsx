@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,16 @@ import { registerUser } from "@/api/users";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth(); // login function from context
+  const { user, loading: authLoading, login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
 
-  // import your login() helper if you have one
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/profile");
+    }
+  }, [user, authLoading, router]);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();

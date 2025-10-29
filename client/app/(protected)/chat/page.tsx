@@ -56,6 +56,9 @@ export default function ChatPage() {
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const uniqueMatches = Array.from(
+    new Map(matches.map((m) => [m.userId, m])).values()
+  );
 
   // ---------- LOAD MATCHES ----------
   useEffect(() => {
@@ -84,14 +87,12 @@ export default function ChatPage() {
     loadMessages(selectedMatch.matchId, true); // initial load
 
     const interval = setInterval(() => {
-      // Only refresh if we're at skip 0 (showing most recent messages)
-      if (skip === 10) {
-        loadMessages(selectedMatch.matchId, true, true); // refresh newest messages
-      }
+      // Only poll for new messages, always from skip 0 (most recent)
+      loadMessages(selectedMatch.matchId, true, true);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedMatch, skip]);
+  }, [selectedMatch]); // ✅ REMOVED skip from dependencies!
 
   const loadMessages = async (
     matchId: string,
@@ -208,7 +209,8 @@ export default function ChatPage() {
               Your Matches
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {matches.length} {matches.length === 1 ? "match" : "matches"}
+              {uniqueMatches.length}{" "}
+              {uniqueMatches.length === 1 ? "match" : "matches"}
             </p>
           </div>
 

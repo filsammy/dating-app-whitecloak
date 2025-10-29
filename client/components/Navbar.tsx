@@ -96,6 +96,19 @@ export default function Navbar() {
                   </li>
                   <li>
                     <Link
+                      href="/blocked"
+                      className={`text-sm font-medium transition-colors hover:text-pink-600 dark:hover:text-pink-400 ${
+                        isActive("/blocked")
+                          ? "text-pink-600 dark:text-pink-400"
+                          : "text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      Blocked
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link
                       href="/logout"
                       className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                     >
