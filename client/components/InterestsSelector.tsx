@@ -154,7 +154,7 @@ export default function InterestsSelector({
       </label>
 
       {/* Selected Interests Display */}
-      <div className="flex flex-wrap gap-2 mb-3 min-h-[40px] p-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+      <div className="flex flex-wrap gap-2 mb-3 min-h-10 p-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
         {selectedInterests.length === 0 ? (
           <span className="text-sm text-gray-400 dark:text-gray-500 italic">
             No interests selected yet
@@ -163,7 +163,7 @@ export default function InterestsSelector({
           selectedInterests.map((interest) => (
             <span
               key={interest}
-              className="inline-flex items-center gap-1 bg-gradient-to-r from-pink-100 to-rose-100 dark:from-pink-900/30 dark:to-rose-900/30 text-pink-700 dark:text-pink-400 px-3 py-1.5 rounded-full text-sm font-medium"
+              className="inline-flex items-center gap-1 bg-linear-to-r from-pink-100 to-rose-100 dark:from-pink-900/30 dark:to-rose-900/30 text-pink-700 dark:text-pink-400 px-3 py-1.5 rounded-full text-sm font-medium"
             >
               {interest}
               <button
@@ -221,7 +221,7 @@ export default function InterestsSelector({
                           onClick={() => handleToggleInterest(interest)}
                           className={`px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 ${
                             isSelected
-                              ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-md"
+                              ? "bg-linear-to-r from-pink-600 to-rose-600 text-white shadow-md"
                               : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-pink-100 dark:hover:bg-pink-900/30"
                           }`}
                         >
@@ -248,7 +248,7 @@ export default function InterestsSelector({
             <Button
               type="button"
               onClick={handleSave}
-              className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500"
+              className="flex-1 bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500"
             >
               Save Interests ({tempSelected.length})
             </Button>

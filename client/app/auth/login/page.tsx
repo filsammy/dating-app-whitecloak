@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/AuthContext";
+import { loginUser } from "@/api/users";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,24 +27,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, password: form.password }),
-      });
+      const data = await loginUser(form.email, form.password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error?.message || "Something went wrong.");
-        return;
+      if (data.access) {
+        await login(data.access); // update context or token
+        router.replace("/discover");
+      } else {
+        throw new Error("Invalid response from server.");
       }
-
-      await login(data.access); // update context state
-      router.replace("/discover"); // redirect works now
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -56,7 +50,7 @@ export default function LoginPage() {
         className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md w-full max-w-md space-y-4 transition-colors"
       >
         <h1 className="text-2xl font-semibold text-center text-pink-600">
-          Welcome Back
+          Login
         </h1>
 
         <Input
@@ -94,7 +88,7 @@ export default function LoginPage() {
               <span>Signing in...</span>
             </>
           ) : (
-            "Login"
+            "Submit"
           )}
         </Button>
       </form>

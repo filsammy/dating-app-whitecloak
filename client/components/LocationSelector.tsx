@@ -76,7 +76,7 @@ export default function LocationSelector({
 
   return (
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block flex items-center gap-2">
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
         <MapPin className="size-4 text-pink-600 dark:text-pink-400" />
         Location
       </label>
@@ -110,7 +110,7 @@ export default function LocationSelector({
             <Button
               type="button"
               onClick={handleUseCurrentLocation}
-              className="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500"
+              className="w-full bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 dark:from-pink-500 dark:to-rose-500"
             >
               <Navigation className="size-4 mr-2" />
               Use My Current Location

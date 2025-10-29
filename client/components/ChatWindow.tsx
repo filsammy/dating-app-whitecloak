@@ -105,6 +105,7 @@ export default function ChatWindow({
             </p>
           </div>
         </div>
+
         <Button
           variant="ghost"
           size="icon-sm"

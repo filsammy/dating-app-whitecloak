@@ -5,7 +5,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { MessageCircle } from "lucide-react";
 import MatchList from "@/components/MatchList";
 import ChatWindow from "@/components/ChatWindow";
+import {
+  fetchMatches,
+  fetchMessages,
+  sendMessage,
+  unmatchUser,
+} from "@/api/messages";
 
+// ---------- TYPES ----------
 interface Profile {
   _id: string;
   userId: string;
@@ -14,14 +21,14 @@ interface Profile {
   profilePic: string;
 }
 
-interface Match {
+export interface Match {
   matchId: string;
   userId: string;
   profile: Profile;
   matchedAt: string;
 }
 
-interface Message {
+export interface Message {
   _id: string;
   matchId: string;
   senderId: {
@@ -36,6 +43,7 @@ interface Message {
   createdAt: string;
 }
 
+// ---------- COMPONENT ----------
 export default function ChatPage() {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
@@ -45,84 +53,59 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
-  const uniqueMatches = Array.from(
-    new Map(matches.map((m) => [m.userId, m])).values()
-  );
-
+  // ---------- LOAD MATCHES ----------
   useEffect(() => {
-    fetchMatches();
+    loadMatches();
   }, []);
 
+  // ---------- LOAD MESSAGES ----------
   useEffect(() => {
-    if (selectedMatch) {
-      fetchMessages(selectedMatch.matchId);
-      const interval = setInterval(() => {
-        fetchMessages(selectedMatch.matchId);
-      }, 3000);
-      return () => clearInterval(interval);
-    }
+    if (!selectedMatch) return;
+
+    loadMessages(selectedMatch.matchId);
+    const interval = setInterval(() => {
+      loadMessages(selectedMatch.matchId);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [selectedMatch]);
 
-  const fetchMatches = async () => {
+  // ---------- HANDLERS ----------
+  const loadMatches = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5000/matches", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setMatches(data.matches);
-      }
+      const data = await fetchMatches();
+      setMatches(data);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load matches:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMessages = async (matchId: string) => {
+  const loadMessages = async (matchId: string) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(`http://localhost:5000/messages/${matchId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.messages);
-      }
+      const data = await fetchMessages(matchId);
+      setMessages(data);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load messages:", err);
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedMatch || sending) return;
 
     setSending(true);
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5000/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          matchId: selectedMatch.matchId,
-          receiverId: selectedMatch.userId,
-          content: newMessage.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        setNewMessage("");
-        await fetchMessages(selectedMatch.matchId);
-      }
+      await sendMessage(
+        selectedMatch.matchId,
+        selectedMatch.userId,
+        newMessage.trim()
+      );
+      setNewMessage("");
+      await loadMessages(selectedMatch.matchId);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to send message:", err);
     } finally {
       setSending(false);
     }
@@ -133,24 +116,15 @@ export default function ChatPage() {
       return;
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(
-        `http://localhost:5000/matches/${matchedUserId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (res.ok) {
-        setSelectedMatch(null);
-        await fetchMatches();
-      }
+      await unmatchUser(matchedUserId);
+      setSelectedMatch(null);
+      await loadMatches();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to unmatch:", err);
     }
   };
 
+  // ---------- LOADING STATE ----------
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -159,10 +133,11 @@ export default function ChatPage() {
     );
   }
 
+  // ---------- UI ----------
   return (
     <main className="min-h-screen bg-linear-to-b from-pink-50 to-white dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-6xl mx-auto h-screen flex">
-        {/* Matches Sidebar */}
+        {/* Sidebar */}
         <div
           className={`${
             selectedMatch ? "hidden md:block" : "block"
@@ -174,8 +149,7 @@ export default function ChatPage() {
               Your Matches
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {uniqueMatches.length}{" "}
-              {uniqueMatches.length === 1 ? "match" : "matches"}
+              {matches.length} {matches.length === 1 ? "match" : "matches"}
             </p>
           </div>
 
@@ -200,7 +174,7 @@ export default function ChatPage() {
             currentUserId={user?._id || ""}
             onBack={() => setSelectedMatch(null)}
             onUnmatch={handleUnmatch}
-            onSendMessage={sendMessage}
+            onSendMessage={handleSendMessage}
             onMessageChange={setNewMessage}
           />
         </div>

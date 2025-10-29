@@ -4,11 +4,11 @@ import { Heart, Sparkles, MessageCircle, Users } from "lucide-react";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-linear-to-b from-pink-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <main className="min-h-screen bg-linear-to-b from-pink-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-20">
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center min-h-screen px-4">
         <div className="text-center space-y-6 max-w-3xl">
-          {/* Animated Heart Icon */}
+          {/* Animated Heart Icon
           <div className="flex justify-center mb-8">
             <div className="relative">
               <Heart className="size-20 text-pink-600 dark:text-pink-500 fill-pink-600 dark:fill-pink-500 animate-pulse" />
@@ -17,7 +17,7 @@ export default function Home() {
                 style={{ animationDuration: "3s" }}
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Title */}
           <h1 className="text-6xl md:text-7xl font-bold text-gray-800 dark:text-gray-100">

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/AuthContext";
+import { registerUser } from "@/api/users";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,31 +14,25 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
 
+  // import your login() helper if you have one
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, password: form.password }),
-      });
+      const data = await registerUser(form.email, form.password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error?.message || "Something went wrong.");
-        return;
+      // If your backend returns an access token, log in automatically
+      if (data.access) {
+        await login(data.access, "/profile");
       }
 
-      // Immediately log the user in after registration
-      await login(data.access, "/profile"); // if backend also returns access token
-      router.replace("/profile"); // redirect after successful registration
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+      router.replace("/profile");
+    } catch (err: any) {
+      console.error("Register error:", err);
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

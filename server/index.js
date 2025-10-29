@@ -35,6 +35,9 @@ app.use("/matches", matchRoutes);
 const messageRoutes = require("./routes/messageRoutes");
 app.use("/messages", messageRoutes);
 
+const blockController = require("./routes/blockRoutes");
+app.use("/users", blockRoutes);
+
 // ERROR HANDLER
 const { errorHandler } = require("./errorHandler");
 app.use(errorHandler);
