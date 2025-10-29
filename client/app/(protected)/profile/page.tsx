@@ -4,6 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, User, Sparkles } from "lucide-react";
 import ProfileForm from "@/components/ProfileForm";
+import { getMyProfile, deleteMyProfile } from "@/api/profile";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -26,14 +27,9 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5000/profiles/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const profile = await getMyProfile();
 
-      if (res.ok) {
-        const data = await res.json();
-        const profile = data.profile;
+      if (profile) {
         setHasProfile(true);
         setForm({
           name: profile.name || "",
@@ -50,7 +46,7 @@ export default function ProfilePage() {
         setHasProfile(false);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching profile:", err);
     } finally {
       setLoading(false);
     }
@@ -70,28 +66,22 @@ export default function ProfilePage() {
       return;
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5000/profiles", {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+      await deleteMyProfile();
+      setHasProfile(false);
+      setForm({
+        name: "",
+        age: "",
+        bio: "",
+        profilePic: "",
+        latitude: "",
+        longitude: "",
+        gender: "",
+        interestedIn: [],
+        interests: "",
       });
-
-      if (res.ok) {
-        setHasProfile(false);
-        setForm({
-          name: "",
-          age: "",
-          bio: "",
-          profilePic: "",
-          latitude: "",
-          longitude: "",
-          gender: "",
-          interestedIn: [],
-          interests: "",
-        });
-      }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Error deleting profile:", err);
+      alert(err?.message || "Failed to delete profile");
     }
   };
 

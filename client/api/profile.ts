@@ -1,7 +1,13 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+function getAuthHeader() {
+  const token = localStorage.getItem("accessToken");
+  return { Authorization: `Bearer ${token}` };
+}
+
 export interface Profile {
   _id?: string;
+  userId?: string;
   name: string;
   age: number;
   bio: string;
@@ -10,17 +16,36 @@ export interface Profile {
   interests: string[];
   interestedIn: string[];
   location?: {
+    type: string;
     coordinates: [number, number];
   };
 }
 
 interface ProfileResponse {
   profile: Profile;
+  error?: {
+    message?: string;
+  };
 }
 
-export async function getMyProfile(token: string): Promise<Profile | null> {
+export interface SaveProfilePayload {
+  name: string;
+  age: number;
+  bio: string;
+  profilePic: string;
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
+  gender: string;
+  interestedIn: string[];
+  interests: string[];
+}
+
+// Get the current user's profile
+export async function getMyProfile(): Promise<Profile | null> {
   const res = await fetch(`${BASE_URL}/profiles/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeader(),
   });
 
   if (res.ok) {
@@ -32,16 +57,39 @@ export async function getMyProfile(token: string): Promise<Profile | null> {
     return null; // No profile found
   }
 
-  throw new Error("Failed to fetch profile");
+  const data = await res.json();
+  throw new Error(data.error?.message || "Failed to fetch profile");
 }
 
-export async function deleteMyProfile(token: string): Promise<void> {
+// Create or update profile
+export async function saveProfile(payload: SaveProfilePayload): Promise<Profile> {
+  const res = await fetch(`${BASE_URL}/profiles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data: ProfileResponse = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error?.message || "Failed to save profile");
+  }
+
+  return data.profile;
+}
+
+// Delete profile
+export async function deleteMyProfile(): Promise<void> {
   const res = await fetch(`${BASE_URL}/profiles`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getAuthHeader(),
   });
 
   if (!res.ok) {
-    throw new Error("Failed to delete profile");
+    const data = await res.json();
+    throw new Error(data.error?.message || "Failed to delete profile");
   }
 }

@@ -7,6 +7,7 @@ import { Heart, Trash2, Sparkles } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import LocationSelector from "@/components/LocationSelector";
 import InterestsSelector from "@/components/InterestsSelector";
+import { saveProfile, SaveProfilePayload } from "@/api/profile";
 
 interface ProfileFormProps {
   initialData: {
@@ -57,8 +58,7 @@ export default function ProfileForm({
     setSaving(true);
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const payload = {
+      const payload: SaveProfilePayload = {
         name: form.name.trim(),
         age: parseInt(form.age),
         bio: form.bio.trim(),
@@ -72,27 +72,12 @@ export default function ProfileForm({
         interests: form.interestsArray,
       };
 
-      const res = await fetch("http://localhost:5000/profiles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error?.message || "Failed to save profile");
-        return;
-      }
-
+      await saveProfile(payload);
       setSuccess(hasProfile ? "Profile updated!" : "Profile created!");
       onSuccess();
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      console.error("Error saving profile:", err);
+      setError(err?.message || "Failed to save profile");
     } finally {
       setSaving(false);
     }
