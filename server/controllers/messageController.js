@@ -7,32 +7,29 @@ exports.getMessagesByMatchId = async (req, res, next) => {
   try {
     const { matchId } = req.params;
     const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
 
-    // Verify that the user is part of this match
     const match = await Match.findById(matchId);
-    
-    if (!match) {
-      throw createError("Match not found", 404, "MATCH_NOT_FOUND");
-    }
+    if (!match) throw createError("Match not found", 404, "MATCH_NOT_FOUND");
 
-    // Check if user is authorized to view these messages
-    if (match.fromUser.toString() !== userId && match.toUser.toString() !== userId) {
-      throw createError("Unauthorized to view these messages", 403, "UNAUTHORIZED");
-    }
+    if (match.fromUser.toString() !== userId && match.toUser.toString() !== userId)
+      throw createError("Unauthorized", 403, "UNAUTHORIZED");
 
-    // Check if it's actually a match (both users liked each other)
-    if (!match.isMatch) {
+    if (!match.isMatch)
       throw createError("Can only message after matching", 403, "NOT_MATCHED");
-    }
 
+    const totalMessages = await Message.countDocuments({ matchId });
     const messages = await Message.find({ matchId })
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate("senderId", "email")
       .populate("receiverId", "email");
 
     res.json({
-      messages,
-      count: messages.length
+      messages: messages.reverse(), // so newest still appears at bottom
+      hasMore: skip + limit < totalMessages,
     });
   } catch (err) {
     next(err);

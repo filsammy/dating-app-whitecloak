@@ -42,10 +42,12 @@ interface ChatWindowProps {
   newMessage: string;
   sending: boolean;
   currentUserId: string;
+  hasMore: boolean;
   onBack: () => void;
   onUnmatch: (userId: string) => void;
   onSendMessage: (e: React.FormEvent) => void;
   onMessageChange: (message: string) => void;
+  onLoadMore: () => void;
 }
 
 export default function ChatWindow({
@@ -54,10 +56,12 @@ export default function ChatWindow({
   newMessage,
   sending,
   currentUserId,
+  hasMore,
   onBack,
   onUnmatch,
   onSendMessage,
   onMessageChange,
+  onLoadMore,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -118,8 +122,18 @@ export default function ChatWindow({
 
       {/* Messages */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Scrollable messages area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {hasMore && (
+            <div className="flex justify-center">
+              <button
+                onClick={onLoadMore}
+                className="text-sm text-pink-600 hover:underline mb-2"
+              >
+                Load older messages
+              </button>
+            </div>
+          )}
+
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -162,6 +176,7 @@ export default function ChatWindow({
               );
             })
           )}
+
           <div ref={messagesEndRef} />
         </div>
       </div>

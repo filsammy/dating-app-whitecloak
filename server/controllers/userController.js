@@ -7,10 +7,23 @@ const createError = require("../utils/createError"); // optional helper
 exports.registerUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!$])[A-Za-z\d!$]{8,}$/;
 
     // Basic validations
     if (!email || !email.includes("@")) {
       throw createError("Invalid email address", 400, "INVALID_EMAIL");
+    }
+
+    if (!password) {
+      throw createError("Password is required", 400, "MISSING_PASSWORD");
+    }
+
+    if (!passwordRegex.test(password)) {
+      throw createError(
+        'Password must be at least 8 characters, include letters, numbers, and one special character ("!" or "$")',
+        400,
+        "INVALID_PASSWORD"
+      );
     }
 
     if (!password || password.length < 8) {

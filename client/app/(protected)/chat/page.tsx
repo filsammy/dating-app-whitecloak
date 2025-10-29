@@ -52,23 +52,13 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   // ---------- LOAD MATCHES ----------
   useEffect(() => {
     loadMatches();
   }, []);
-
-  // ---------- LOAD MESSAGES ----------
-  useEffect(() => {
-    if (!selectedMatch) return;
-
-    loadMessages(selectedMatch.matchId);
-    const interval = setInterval(() => {
-      loadMessages(selectedMatch.matchId);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [selectedMatch]);
 
   // ---------- HANDLERS ----------
   const loadMatches = async () => {
@@ -82,10 +72,39 @@ export default function ChatPage() {
     }
   };
 
-  const loadMessages = async (matchId: string) => {
+  useEffect(() => {
+    if (!selectedMatch) return;
+
+    setMessages([]); // reset messages when switching match
+    setSkip(0);
+    setHasMore(true);
+
+    loadMessages(selectedMatch.matchId, true); // initial load
+
+    const interval = setInterval(() => {
+      loadMessages(selectedMatch.matchId, true); // refresh newest messages
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [selectedMatch]);
+
+  const loadMessages = async (matchId: string, initial = false) => {
     try {
-      const data = await fetchMessages(matchId);
-      setMessages(data);
+      const { messages: newMessages, hasMore } = await fetchMessages(
+        matchId,
+        10,
+        initial ? 0 : skip
+      );
+
+      if (initial) {
+        setMessages(newMessages);
+        setSkip(10);
+      } else {
+        setMessages((prev) => [...newMessages, ...prev]); // prepend older messages
+        setSkip((prev) => prev + 10);
+      }
+
+      setHasMore(hasMore);
     } catch (err) {
       console.error("Failed to load messages:", err);
     }
@@ -176,6 +195,10 @@ export default function ChatPage() {
             onUnmatch={handleUnmatch}
             onSendMessage={handleSendMessage}
             onMessageChange={setNewMessage}
+            onLoadMore={() =>
+              selectedMatch && loadMessages(selectedMatch.matchId)
+            }
+            hasMore={hasMore}
           />
         </div>
       </div>

@@ -16,13 +16,18 @@ export async function fetchMatches(): Promise<Match[]> {
   return data.matches;
 }
 
-export async function fetchMessages(matchId: string): Promise<Message[]> {
-  const res = await fetch(`${BASE_URL}/messages/${matchId}`, {
-    headers: getAuthHeader(),
-  });
+export async function fetchMessages(
+  matchId: string,
+  limit = 10,
+  skip = 0
+): Promise<{ messages: Message[]; hasMore: boolean }> {
+  const res = await fetch(
+    `${BASE_URL}/messages/${matchId}?limit=${limit}&skip=${skip}`,
+    { headers: getAuthHeader() }
+  );
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || "Failed to fetch messages");
-  return data.messages;
+  return data;
 }
 
 export async function sendMessage(matchId: string, receiverId: string, content: string) {
