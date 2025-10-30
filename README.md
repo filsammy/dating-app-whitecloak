@@ -12,7 +12,7 @@
 8. [Setup & Installation](#setup--installation)
 9. [Deployment](#deployment)
 10. [Security](#security)
-11. [Others](#current-feature-status)
+11. [Current Feature Status & Others](#current-feature-status)
 
 ---
 
