@@ -22,6 +22,7 @@ export default function LoginPage() {
   }, [user, authLoading, router]);
 
   async function handleLogin(e: React.FormEvent) {
+    console.log("Deployed BASE_URL:", process.env.NEXT_PUBLIC_API_URL);
     e.preventDefault();
     setError("");
     setLoading(true);
