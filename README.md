@@ -1,5 +1,10 @@
 # 📱 Bemb Dating App - Complete Documentation
 
+### Links
+
+- **Frontend (Vercel):** [https://dating-app-phi-five.vercel.app](https://dating-app-phi-five.vercel.app)
+- **Backend (Render):** [https://dating-app-whitecloak.onrender.com](https://dating-app-whitecloak.onrender.com)
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -19,11 +24,6 @@
 ## Overview
 
 **Bemb** is a modern dating application that helps users find meaningful connections through smart matching algorithms based on location, preferences, interests, and mutual attraction.
-
-### Links
-
-- **Frontend (Vercel):** [https://dating-app-phi-five.vercel.app](https://dating-app-phi-five.vercel.app)
-- **Backend (Render):** [https://dating-app-whitecloak.onrender.com](https://dating-app-whitecloak.onrender.com)
 
 ### Key Features
 
