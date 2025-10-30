@@ -29,16 +29,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Use the environment variable for the backend URL
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
   const fetchProfile = async (token: string) => {
     try {
-      const res = await fetch("http://localhost:5000/users/profile", {
+      const res = await fetch(`${BASE_URL}/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!res.ok) throw new Error("Failed to fetch profile");
+
       const data = await res.json();
       setUser(data.user);
     } catch (err) {
-      console.error(err);
+      console.error("Profile fetch error:", err);
       setUser(null);
       localStorage.removeItem("accessToken");
     } finally {
@@ -46,7 +51,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // ✅ login now accepts an optional redirect path
   const login = async (token?: string, redirectTo: string = "/discover") => {
     if (!token) return;
     localStorage.setItem("accessToken", token);
@@ -57,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     localStorage.removeItem("accessToken");
     setUser(null);
-    router.replace("/login"); // optional logout redirect
+    router.replace("/login");
   };
 
   useEffect(() => {
