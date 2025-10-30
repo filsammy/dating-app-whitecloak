@@ -1,6 +1,6 @@
 import type { Match, Message } from "@/app/(protected)/chat/page"; // adjust path as needed
 
-const BASE_URL = process.env.API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function getAuthHeader() {
   const token = localStorage.getItem("accessToken");
