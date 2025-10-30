@@ -6,8 +6,33 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 
 const app = express();
+
+// ✅ FIXED CORS CONFIGURATION
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001", 
+  process.env.FRONTEND_URL || "https://dating-app-henna.vercel.app", // Use env variable with fallback
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
-app.use(cors({ origin: "*", credentials: true }));
 
 mongoose.connect(process.env.MONGO_URI);
 mongoose.connection.once("open", () =>
@@ -15,8 +40,13 @@ mongoose.connection.once("open", () =>
 );
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] },
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 const socketHandler = require("./socketHandler");
