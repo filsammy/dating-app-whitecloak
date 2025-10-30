@@ -6,8 +6,9 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// ✅ FIXED CORS CONFIGURATION
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001", 
@@ -17,9 +18,9 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (e.g. mobile apps or curl)
       if (!origin) return callback(null, true);
-      
+
       if (allowedOrigins.indexOf(origin) === -1) {
         const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
         return callback(new Error(msg), false);
@@ -31,8 +32,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI);
 mongoose.connection.once("open", () =>
